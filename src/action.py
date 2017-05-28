@@ -254,7 +254,7 @@ class playRadio(object):
             '1xtra': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_1xtra.m3u8',
             '4 extra': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_four_extra.m3u8',
             'nottingham': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_nottingham.m3u8',
-            'hitz fm': 'http://astro1.rastream.com/hitz',
+            'hits fm': 'http://astro1.rastream.com/hitz',
                     }
         return stations[station_name]
 
