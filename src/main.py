@@ -127,8 +127,10 @@ def main():
     parser.add_argument('--audio-logging', action='store_true',
                         help='Log all requests and responses to WAV files in /tmp')
     parser.add_argument('--assistant-secrets',
+                        default=os.path.expanduser('~/assistant.json'),
                         help='Path to client secrets for the Assistant API')
     parser.add_argument('--cloud-speech-secrets',
+                        default=os.path.expanduser('~/cloud_speech.json'),
                         help='Path to service account credentials for the '
                         'Cloud Speech API')
 
@@ -265,6 +267,7 @@ class SyncMicRecognizer(object):
                 break
 
             logger.info('recognizing...')
+            action.pauseActors()
             try:
                 self._handle_result(self.recognizer.do_request())
             except speech.Error:
@@ -272,6 +275,7 @@ class SyncMicRecognizer(object):
                 self.say(_('Unexpected error. Try again or check the logs.'))
 
             self.recognizer_event.clear()
+            action.resumeActors()
             self.triggerer.start()
             self._status('ready')
 
