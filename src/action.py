@@ -254,6 +254,10 @@ class playRadio(object):
             '1xtra': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_1xtra.m3u8',
             '4 extra': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_four_extra.m3u8',
             'nottingham': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_nottingham.m3u8',
+            'hits fm': 'http://www.surfmusic.de/m3u/hitz-fm,11410.m3u',
+            'one fm': 'http://www.surfmusic.de/m3u/one-fm-88-1-fm,15944.m3u'
+            'fly fm': 'http://www.surfmusic.de/m3u/fly-fm-95-8,9447.m3u'
+            '988 fm': 'http://www.surfmusic.de/m3u/radio-98-8,5253.m3u'
                     }
         return stations[station_name]
 
