@@ -17,6 +17,10 @@
 import datetime
 import logging
 import subprocess
+import vlc
+import time
+import requests
+import re
 
 import actionbase
 
@@ -194,6 +198,108 @@ class RepeatAfterMe(object):
         self.say(to_repeat)
 
 
+# Power: Shutdown or reboot the pi
+# ================================
+# Shuts down the pi or reboots with a response
+#
+
+
+class PowerCommand(object):
+    """Shutdown or reboot the pi"""
+
+    def __init__(self, say, command):
+        self.say = say
+        self.command = command
+
+    def run(self, voice_command):
+        if self.command == "shutdown":
+            self.say("Shutting down, goodbye")
+            subprocess.call("sudo shutdown now", shell=True)
+        elif self.command == "reboot":
+            self.say("Rebooting")
+            subprocess.call("sudo shutdown -r now", shell=True)
+        else:
+            logging.error("Error identifying power command.")
+            self.say("Sorry I didn't identify that command")
+
+
+class playRadio(object):
+
+    def __init__(self, say, keyword):
+        self.say = say
+        self.keyword = keyword
+        self.instance = vlc.Instance()
+        global player
+        player = self.instance.media_player_new()
+        self.set_state("stopped")
+
+    def set_state(self, new_state):
+        logging.info("setting radio state " + new_state)
+        global radioState
+        radioState = new_state
+
+    def get_state():
+        return radioState
+
+    def get_station(self, station_name):
+        # replace the stream for the first line 'radio' with the stream for your default station
+        stations = {
+            '1': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_one.m3u8',
+            '2': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_two.m3u8',
+            '3': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_three.m3u8',
+            '4': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_fourfm.m3u8',
+            '5': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_five_live.m3u8',
+            '5 sports': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_five_live_sports_extra.m3u8',
+            '6': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_6music.m3u8',
+            '1xtra': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_1xtra.m3u8',
+            '4 extra': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_four_extra.m3u8',
+            'nottingham': 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_radio_nottingham.m3u8',
+                    }
+        return stations[station_name]
+
+    def run(self, voice_command):
+
+        voice_command = ((voice_command.lower()).replace(self.keyword, '', 1)).strip()
+
+        if (voice_command == "stop") or (voice_command == "off"):
+            logging.info("radio stopped")
+            player.stop()
+            self.set_state("stopped")
+            return
+
+        logging.info("starting radio: " + voice_command)
+        global station
+        try:
+            logging.info("searching for: " + voice_command)
+            station = self.get_station(voice_command)
+        except KeyError:
+            # replace this stream with the stream for your default station
+            self.say("Radio search not found. Playing radio 6")
+            station = 'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/uk/sbr_high/ak/bbc_6music.m3u8'
+
+        if station.endswith("m3u"):
+            logging.info("m3u reading manually")
+            content = requests.get(station, stream=True).text
+            url = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', content)[0]
+            station = url.strip()
+
+        logging.info("stream " + station)
+        media = self.instance.media_new(station)
+        player.set_media(media)
+        self.set_state("playing")
+
+    def pause():
+        logging.info("pausing radio")
+        if player is not None:
+            player.stop()
+
+    def resume():
+        radioState = playRadio.get_state()
+        logging.info("resuming radio " + radioState)
+        if radioState == "playing":
+            player.play()
+
+
 # =========================================
 # Makers! Implement your own actions here.
 # =========================================
@@ -216,9 +322,13 @@ def make_actor(say):
     actor.add_keyword(_('repeat after me'),
                       RepeatAfterMe(say, _('repeat after me')))
 
-    # =========================================
-    # Makers! Add your own voice commands here.
-    # =========================================
+# =========================================
+# Makers! Add your own voice commands here.
+# =========================================
+
+    actor.add_keyword(_('power off'), PowerCommand(say, 'shutdown'))
+    actor.add_keyword(_('reboot'), PowerCommand(say, 'reboot'))
+    actor.add_keyword(_('radio'), playRadio(say, _('radio')))
 
     return actor
 
@@ -249,3 +359,17 @@ conflict with the First or Second Law."""))
     simple_command(_('your name'), _('A machine has no name'))
 
     actor.add_keyword(_('time'), SpeakTime(say))
+
+# =========================================
+# Makers! Add commands to pause and resume your actions here
+# =========================================
+
+
+def pauseActors():
+    """add your resume actions here"""
+    playRadio.pause()
+
+
+def resumeActors():
+    """add your pause actions here"""
+    playRadio.resume()
