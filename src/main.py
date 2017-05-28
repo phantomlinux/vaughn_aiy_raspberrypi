@@ -156,10 +156,10 @@ def main():
         bytes_per_sample=speech.AUDIO_SAMPLE_SIZE,
         sample_rate_hz=speech.AUDIO_SAMPLE_RATE_HZ)
     with recorder:
-        do_recognition(args, recorder, recognizer, player, credentials)
+        do_recognition(args, recorder, recognizer, player)
 
 
-def do_recognition(args, recorder, recognizer, player, credentials):
+def do_recognition(args, recorder, recognizer, player):
     """Configure and run the recognizer."""
     say = tts.create_say(player)
 
@@ -179,10 +179,6 @@ def do_recognition(args, recorder, recognizer, player, credentials):
         import triggers.clap
         triggerer = triggers.clap.ClapTrigger(recorder)
         msg = 'Clap your hands'
-    elif args.trigger == 'hotword':
-        import triggers.hotword
-        triggerer = triggers.hotword.HotwordTrigger(credentials)
-        msg = 'Say "Ok Google"'
     else:
         logger.error("Unknown trigger '%s'", args.trigger)
         return
@@ -271,7 +267,7 @@ class SyncMicRecognizer(object):
                 break
 
             logger.info('recognizing...')
-            action.pause_actors()
+            action.pauseActors()
             try:
                 self._handle_result(self.recognizer.do_request())
             except speech.Error:
@@ -279,7 +275,7 @@ class SyncMicRecognizer(object):
                 self.say(_('Unexpected error. Try again or check the logs.'))
 
             self.recognizer_event.clear()
-            action.resume_actors()
+            action.resumeActors()
             self.triggerer.start()
             self._status('ready')
 
